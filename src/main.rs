@@ -3,6 +3,7 @@ extern crate crypto;
 use crypto::digest::Digest;
 use crypto::md5::Md5;
 
+use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
@@ -36,13 +37,32 @@ const CONSTANT_INVOKEDYNAMIC      : u8 = 18;
 // TODO check different Java versions and platforms
 // ------------------------------------------------------
 
+struct Constant {
+    number: u8,
+    constant_type: u8,
+    type_name: String,
+    value: String,
+    comment: String,
+    size: u8,
+}
+
+impl fmt::Display for Constant {
+    fn fmt(&self, c: &mut fmt::Formatter) -> fmt::Result {
+        if self.comment.is_empty() {
+            write!(c, "\t#{} = {}\t\t{}", self.number, self.type_name, self.value)
+        } else {
+            write!(c, "\t#{} = {}\t\t{}\t\t// {})", self.number, self.type_name, self.value, self.comment)
+        }
+    }
+}
+
 fn main() {
  
     println!("___________________________________________");
     // let filename = get_filename();
     let filename = "test/Test.class";
     println!("{}", filename);
-   
+
     let mut f = File::open(filename).expect("Unable to open file");
     let mut data = Vec::new();
     f.read_to_end(&mut data).expect("Unable to read data");
@@ -121,7 +141,7 @@ fn read_constant_pool(data: &[u8], count: u8) {
     while read < count - 1 {
         let tag = data[current];
         read = read + 1;
-        current = match tag as u8 {
+        let constant = match tag as u8 {
             CONSTANT_METHODREF => read_constant_method_ref(&data, current, read),
             CONSTANT_NAMEANDTYPE => read_constant_name_and_type(&data, current, read),
             CONSTANT_INTERFACEMETHODREF => read_constant_interface_method_ref(&data, current, read),
@@ -139,43 +159,74 @@ fn read_constant_pool(data: &[u8], count: u8) {
             CONSTANT_INVOKEDYNAMIC => read_constant_invoke_dynamic(&data, current, read),
             _  => read_constant_unknown(&data, current),
         };
+        println!("{}", constant);
+        current = current + (constant.size as usize);
     }
 }
 
-fn read_constant_method_ref(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_method_ref(data: &[u8], current: usize, read: u8) -> Constant {
     let class_index = &data[current + 1] << 2 | &data[current + 2];
     let name_and_type_index = &data[current + 3] << 2 | &data[current + 4];
-    println!("\t#{} = Methodref\t\t#{}.#{}", read, class_index, name_and_type_index);
-    return current + 5;
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_METHODREF,
+                           type_name: "Methodref".to_string(),
+                           value: format!("#{}.#{}", class_index, name_and_type_index),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 5};
+    return result;
 }
 
-fn read_constant_string(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_string(data: &[u8], current: usize, read: u8) -> Constant {
     let string_index = &data[current + 1] << 2 | &data[current + 2];
-    println!("\t#{} = String\t\t#{}", read, string_index);
-    return current + 3;
+
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_STRING,
+                           type_name: "String".to_string(),
+                           value: format!("#{}", string_index),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 3};
+    return result;
 }
 
-fn read_constant_field_ref(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_field_ref(data: &[u8], current: usize, read: u8) -> Constant {
     let class_index = &data[current + 1] << 2 | &data[current + 2];
     let name_and_type_index = &data[current + 3] << 2 | &data[current + 4];
-    println!("\t#{} = Fieldref\t\t#{}.#{}", read, class_index, name_and_type_index);
-    return current + 5;
+
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_FIELDREF,
+                           type_name: "Fieldref".to_string(),
+                           value: format!("#{}.#{}", class_index, name_and_type_index),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 5};
+    return result;
 }
 
-fn read_constant_interface_method_ref(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_interface_method_ref(data: &[u8], current: usize, read: u8) -> Constant {
     let class_index = &data[current + 1] << 2 | &data[current + 2];
     let name_and_type_index = &data[current + 3] << 2 | &data[current + 4];
-    println!("\t#{} = InterfaceMethodref\t\t#{}.#{}", read, class_index, name_and_type_index);
-    return current + 5;
+
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_FIELDREF,
+                           type_name: "InterfaceMethodref".to_string(),
+                           value: format!("#{}.#{}", class_index, name_and_type_index),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 5};
+    return result;
 }
 
-fn read_constant_class(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_class(data: &[u8], current: usize, read: u8) -> Constant {
     let name_index = &data[current + 1] << 2 | &data[current + 2];
-    println!("\t#{} = Class\t\t#{}", read, name_index);
-    return current + 3;
+
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_CLASS,
+                           type_name: "Class".to_string(),
+                           value: format!("#{}", name_index),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 3};
+    return result;
 }
 
-fn read_constant_utf8(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_utf8(data: &[u8], current: usize, read: u8) -> Constant {
     let length = &data[current + 1] << 2 | &data[current + 2];
     let start = current + 3;
     let end = start + (length as usize);
@@ -183,61 +234,84 @@ fn read_constant_utf8(data: &[u8], current: usize, read: u8) -> usize {
         Ok(v) => v,
         Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
     };
-    println!("\t#{} = Utf8\t\t{}", read, utf8_string);
-    return current + 3 + (length as usize);
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_UTF8,
+                           type_name: "Utf8".to_string(),
+                           value: format!("{}", utf8_string),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: (3 as u8) + length};
+    return result;
 }
 
-fn read_constant_integer(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_integer(data: &[u8], current: usize, read: u8) -> Constant {
     let bytes = &data[current + 1] << 6 | &data[current + 2] << 4 |
                 &data[current + 3] << 2 | &data[current + 4] << 0;
-    println!("\t#{} = Integer\t\t{}", read, bytes);
-    return current + 5;
+
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_INTEGER,
+                           type_name: "Integer".to_string(),
+                           value: format!("{}", bytes),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 5};
+    return result;
 }
 
-fn read_constant_name_and_type(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_name_and_type(data: &[u8], current: usize, read: u8) -> Constant {
     let name_index = &data[current + 1] << 2 | &data[current + 2];
     let descriptor_index = &data[current + 3] << 2 | &data[current + 4];
-    println!("\t#{} = NameAndType\t#{}.#{}", read, name_index, descriptor_index);
-    return current + 5;
+
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_NAMEANDTYPE,
+                           type_name: "NameAndType".to_string(),
+                           value: format!("#{}.#{}", name_index, descriptor_index),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 5};
+    return result;
 }
 
-fn read_constant_unknown(data: &[u8], current: usize) -> usize {
+fn read_constant_unknown(data: &[u8], current: usize) -> Constant {
     panic!("Unknown CONSTANT tag type: {}!", &data[current]);
 }
 
-fn read_constant_long(data: &[u8], current: usize, read: u8) -> usize {
-    // let high_bytes = ;
-    // let low_bytes = ;
-    let long = "NOT IMPLEMENTED";
-    println!("\t#{} = Long\t\t{}", read, long);
-    return current + 9;
+fn read_constant_long(data: &[u8], current: usize, read: u8) -> Constant {
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_LONG,
+                           type_name: "Long".to_string(),
+                           value: format!("{}", "NOT IMPLEMENTED"),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 9};
+    return result;
 }
 
-fn read_constant_float(data: &[u8], current: usize, read: u8) -> usize {
-    // let high_bytes = ;
-    // let low_bytes = ;
-    let float = "NOT IMPLEMENTED";
-    println!("\t#{} = Float\t\t{}", read, float);
-    return current + 9;
+fn read_constant_float(data: &[u8], current: usize, read: u8) -> Constant {
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_FLOAT,
+                           type_name: "Float".to_string(),
+                           value: format!("{}", "NOT IMPLEMENTED"),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 9};
+    return result;
 }
 
-fn read_constant_double(data: &[u8], current: usize, read: u8) -> usize {
-    // let high_bytes = ;
-    // let low_bytes = ;
-    let double = "NOT IMPLEMENTED";
-    println!("\t#{} = Double\t\t{}", read, double);
-    return current + 9;
+fn read_constant_double(data: &[u8], current: usize, read: u8) -> Constant {
+    let result = Constant {number: read,
+                           constant_type: CONSTANT_DOUBLE,
+                           type_name: "Double".to_string(),
+                           value: format!("{}", "NOT IMPLEMENTED"),
+                           comment: "NOT IMPLEMENTED".to_string(),
+                           size: 9};
+    return result;
 }
 
-fn read_constant_invoke_dynamic(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_invoke_dynamic(data: &[u8], current: usize, read: u8) -> Constant {
     panic!("NOT IMPLEMENTED");
 }
 
-fn read_constant_method_type(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_method_type(data: &[u8], current: usize, read: u8) -> Constant {
     panic!("NOT IMPLEMENTED");
 }
 
-fn read_constant_method_handle(data: &[u8], current: usize, read: u8) -> usize {
+fn read_constant_method_handle(data: &[u8], current: usize, read: u8) -> Constant {
     panic!("NOT IMPLEMENTED");
 }
 
