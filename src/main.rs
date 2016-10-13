@@ -1,11 +1,15 @@
-// use std::fs;
-use std::str;
+extern crate crypto;
+
+use crypto::digest::Digest;
+use crypto::md5::Md5;
+
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
+use std::str;
+use std::time;
 // use std::env;
 
-// use rust_crypto::md5::Md5;
-// use rust_crypto::digest::Digest;
  
 // CAFE BABE
 const MAGIC: [u8; 4]  = [202, 254, 186, 190];
@@ -48,23 +52,21 @@ fn main() {
     // seems to be a valid .class file
     println!("Classfile {}", filename);
  
-    // TODO read metadata
-    // let metadata = try!(fs::metadata(filename));
-    // if let Ok(time) = metadata.modified() {
-    //     println!("Last modified {:?}", time);
-    // } else {
-    //     println!("Not supported on this platform");
-    // }
+    // TODO format date
+    let modified_timestamp = read_last_modified(filename);
+    print!("\tLast modified {}; ", modified_timestamp);
  
     // Size in bytes
-    println!("Size: {} bytes", data.len());
+    println!("size: {} bytes", data.len());
  
-    // TODO calculate MD5 checksum
-    // let mut sh = Md5::new();
-    // sh.input_str("The quick brown fox jumps over the lazy dog");
-    // let out_str = sh.result_str();
-    // println!("{}",out_str);
-    println!("");
+    // calculate md5 checksum
+    let mut md5 = Md5::new();
+    md5.input(&data);
+    println!("\tMD5 checksum {}", md5.result_str());
+
+    // compiled from
+    let compiled_from = "NOT IMPLEMENTED";
+    println!("\tCompiled from \"{}\"", compiled_from);
  
     // read minor and major versions
     let (minor, major) = read_version(&data);
@@ -116,19 +118,25 @@ fn read_constant_pool(data: &[u8], count: u8) {
     let mut read = 0;
     // current tag index
     let mut current = 10;
-    while read < count {
+    while read < count - 1 {
         let tag = data[current];
         read = read + 1;
         current = match tag as u8 {
             CONSTANT_METHODREF => read_constant_method_ref(&data, current, read),
+            CONSTANT_NAMEANDTYPE => read_constant_name_and_type(&data, current, read),
             CONSTANT_INTERFACEMETHODREF => read_constant_interface_method_ref(&data, current, read),
             CONSTANT_FIELDREF  => read_constant_field_ref(&data, current, read),
             CONSTANT_STRING    => read_constant_string(&data, current, read),
             CONSTANT_CLASS     => read_constant_class(&data, current, read),
             CONSTANT_UTF8      => read_constant_utf8(&data, current, read),
             CONSTANT_INTEGER   => read_constant_integer(&data, current, read),
-            // CONSTANT_LONG      => read_constant_long(&data, current, read),
-            CONSTANT_NAMEANDTYPE => read_constant_name_and_type(&data, current, read),
+            // TODO
+            CONSTANT_LONG      => read_constant_long(&data, current, read),
+            CONSTANT_FLOAT     => read_constant_float(&data, current, read),
+            CONSTANT_DOUBLE    => read_constant_double(&data, current, read),
+            CONSTANT_METHODHANDLE => read_constant_method_handle(&data, current, read),
+            CONSTANT_METHODTYPE  => read_constant_method_type(&data, current, read),
+            CONSTANT_INVOKEDYNAMIC => read_constant_invoke_dynamic(&data, current, read),
             _  => read_constant_unknown(&data, current),
         };
     }
@@ -195,4 +203,49 @@ fn read_constant_name_and_type(data: &[u8], current: usize, read: u8) -> usize {
 
 fn read_constant_unknown(data: &[u8], current: usize) -> usize {
     panic!("Unknown CONSTANT tag type: {}!", &data[current]);
+}
+
+fn read_constant_long(data: &[u8], current: usize, read: u8) -> usize {
+    // let high_bytes = ;
+    // let low_bytes = ;
+    let long = "NOT IMPLEMENTED";
+    println!("\t#{} = Long\t\t{}", read, long);
+    return current + 9;
+}
+
+fn read_constant_float(data: &[u8], current: usize, read: u8) -> usize {
+    // let high_bytes = ;
+    // let low_bytes = ;
+    let float = "NOT IMPLEMENTED";
+    println!("\t#{} = Float\t\t{}", read, float);
+    return current + 9;
+}
+
+fn read_constant_double(data: &[u8], current: usize, read: u8) -> usize {
+    // let high_bytes = ;
+    // let low_bytes = ;
+    let double = "NOT IMPLEMENTED";
+    println!("\t#{} = Double\t\t{}", read, double);
+    return current + 9;
+}
+
+fn read_constant_invoke_dynamic(data: &[u8], current: usize, read: u8) -> usize {
+    panic!("NOT IMPLEMENTED");
+}
+
+fn read_constant_method_type(data: &[u8], current: usize, read: u8) -> usize {
+    panic!("NOT IMPLEMENTED");
+}
+
+fn read_constant_method_handle(data: &[u8], current: usize, read: u8) -> usize {
+    panic!("NOT IMPLEMENTED");
+}
+
+fn read_last_modified(filename: &str) -> u64 {
+    let metadata = fs::metadata(filename);
+    let modified_timestamp = match metadata {
+        Ok(time) => time.modified().unwrap().duration_since(time::UNIX_EPOCH).unwrap().as_secs(),
+        Err(e)   => panic!("Unable to get last_modified for {}", filename),
+    };
+    return modified_timestamp;
 }
