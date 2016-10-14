@@ -39,10 +39,11 @@ const CONSTANT_INVOKEDYNAMIC      : u8 = 18;
 // All 8-byte constants take up two entries in the constant_pool table of the class file. 
 static EIGHT_BYTE_CONSTANTS: &'static [u8] = &[CONSTANT_LONG, CONSTANT_DOUBLE];
  
-// ------------------------------------------------------
+// ----------------------------------------------------------------------------------
 // FIXME depends on endiaess
 // TODO check different Java versions and platforms
-// ------------------------------------------------------
+// TODO different CONSTANT types print their values a bit differently
+// ----------------------------------------------------------------------------------
 
 struct Constant {
     constant_type: u8,
