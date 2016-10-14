@@ -238,7 +238,7 @@ fn read_constant_utf8(data: &[u8], current: usize, read: u8) -> Constant {
                            constant_type: CONSTANT_UTF8,
                            type_name: "Utf8".to_string(),
                            value: format!("{}", utf8_string),
-                           comment: "NOT IMPLEMENTED".to_string(),
+                           comment: "".to_string(),
                            size: (3 as u8) + length};
     return result;
 }
@@ -251,7 +251,7 @@ fn read_constant_integer(data: &[u8], current: usize, read: u8) -> Constant {
                            constant_type: CONSTANT_INTEGER,
                            type_name: "Integer".to_string(),
                            value: format!("{}", bytes),
-                           comment: "NOT IMPLEMENTED".to_string(),
+                           comment: "".to_string(),
                            size: 5};
     return result;
 }
@@ -278,7 +278,7 @@ fn read_constant_long(data: &[u8], current: usize, read: u8) -> Constant {
                            constant_type: CONSTANT_LONG,
                            type_name: "Long".to_string(),
                            value: format!("{}", "NOT IMPLEMENTED"),
-                           comment: "NOT IMPLEMENTED".to_string(),
+                           comment: "".to_string(),
                            size: 9};
     return result;
 }
@@ -288,7 +288,7 @@ fn read_constant_float(data: &[u8], current: usize, read: u8) -> Constant {
                            constant_type: CONSTANT_FLOAT,
                            type_name: "Float".to_string(),
                            value: format!("{}", "NOT IMPLEMENTED"),
-                           comment: "NOT IMPLEMENTED".to_string(),
+                           comment: "".to_string(),
                            size: 9};
     return result;
 }
@@ -298,7 +298,7 @@ fn read_constant_double(data: &[u8], current: usize, read: u8) -> Constant {
                            constant_type: CONSTANT_DOUBLE,
                            type_name: "Double".to_string(),
                            value: format!("{}", "NOT IMPLEMENTED"),
-                           comment: "NOT IMPLEMENTED".to_string(),
+                           comment: "".to_string(),
                            size: 9};
     return result;
 }
