@@ -5,3 +5,4 @@ authors = ["kovrik <kovrik0@gmail.com>"]
 
 [dependencies]
 rust-crypto = "*"
+chrono = "*"

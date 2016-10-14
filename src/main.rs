@@ -1,4 +1,7 @@
 extern crate crypto;
+extern crate chrono;
+
+use chrono::*;
 
 use crypto::digest::Digest;
 use crypto::md5::Md5;
@@ -51,7 +54,11 @@ impl fmt::Display for Constant {
         if self.comment.is_empty() {
             write!(c, "\t#{} = {}\t\t{}", self.number, self.type_name, self.value)
         } else {
-            write!(c, "\t#{} = {}\t\t{}\t\t// {})", self.number, self.type_name, self.value, self.comment)
+            if self.constant_type == CONSTANT_NAMEANDTYPE {
+                write!(c, "\t#{} = {}\t{}\t\t\t// {})", self.number, self.type_name, self.value, self.comment)
+            } else {
+                write!(c, "\t#{} = {}\t\t{}\t\t\t// {})", self.number, self.type_name, self.value, self.comment)
+            }
         }
     }
 }
@@ -72,9 +79,8 @@ fn main() {
     // seems to be a valid .class file
     println!("Classfile {}", filename);
  
-    // TODO format date
     let modified_timestamp = read_last_modified(filename);
-    print!("\tLast modified {}; ", modified_timestamp);
+    print!("  Last modified {}; ", modified_timestamp);
  
     // Size in bytes
     println!("size: {} bytes", data.len());
@@ -82,16 +88,16 @@ fn main() {
     // calculate md5 checksum
     let mut md5 = Md5::new();
     md5.input(&data);
-    println!("\tMD5 checksum {}", md5.result_str());
+    println!("  MD5 checksum {}", md5.result_str());
 
     // compiled from
     let compiled_from = "NOT IMPLEMENTED";
-    println!("\tCompiled from \"{}\"", compiled_from);
+    println!("  Compiled from \"{}\"", compiled_from);
  
     // read minor and major versions
     let (minor, major) = read_version(&data);
-    println!("\tminor version: {}", minor);
-    println!("\tmajor version: {}", major);
+    println!("  minor version: {}", minor);
+    println!("  major version: {}", major);
  
     // read constant pool count
     let constant_pool_count = read_constant_pool_count(&data);
@@ -315,11 +321,11 @@ fn read_constant_method_handle(data: &[u8], current: usize, read: u8) -> Constan
     panic!("NOT IMPLEMENTED");
 }
 
-fn read_last_modified(filename: &str) -> u64 {
+fn read_last_modified(filename: &str) -> String {
     let metadata = fs::metadata(filename);
     let modified_timestamp = match metadata {
         Ok(time) => time.modified().unwrap().duration_since(time::UNIX_EPOCH).unwrap().as_secs(),
         Err(e)   => panic!("Unable to get last_modified for {}", filename),
     };
-    return modified_timestamp;
+    return UTC.timestamp((modified_timestamp as i64), 0).format("%d/%m/%Y").to_string();
 }
