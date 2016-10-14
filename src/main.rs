@@ -185,19 +185,37 @@ fn read_constant_pool(data: &[u8], count: u8) {
         } else {
             print!("\t#{} = {} // ", i, constant);
             let leaves = traverse(&constant.references, &constant_pool);
+            let mut first = true;
             for r in &leaves {
                 let value = &constant_pool.get(r).unwrap().value;
-                print!("{}", value);
+                if first {
+                    first = false;
+                    print!("{}", value);
+                } else {
+                    print!(".{}", value);
+                }
             }
             println!("");
         }
     }
 }
 
+// TODO ugly; reimplement and optimize
 // recursively traverse references and return a path
 fn traverse(references: &Vec<u8>, constant_pool: &HashMap<u8, Constant>) -> Vec<u8> {
-    // TODO ???
-    return references.clone();
+    let mut path = Vec::new();
+    for r in references {
+        let c = &constant_pool.get(r);
+        if c.unwrap().references.is_empty() {
+            path.push(r.clone());
+        } else {
+            let inner = traverse(&c.unwrap().references, &constant_pool);
+            for i in inner {
+                path.push(i.clone());
+            }
+        }
+    }
+    return path;
 }
 
 fn read_constant_method_ref(data: &[u8], current: usize) -> Constant {
