@@ -7,6 +7,7 @@ use crypto::digest::Digest;
 use crypto::md5::Md5;
 
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use std::fmt;
 use std::fs;
 use std::fs::File;
@@ -183,16 +184,20 @@ fn read_constant_pool(data: &[u8], count: u8) {
             println!("\t#{} = {}", i, constant);
         } else {
             print!("\t#{} = {} // ", i, constant);
-            for c in &constant.references {
-                // FIXME recursively follow references
-                match constant_pool.get(c) {
-                    Some(review) => print!("{}.", constant_pool.get(c).unwrap().value),
-                    None => println!("Unknown reference: {}", c),
-                } 
+            let leaves = traverse(&constant.references, &constant_pool);
+            for r in &leaves {
+                let value = &constant_pool.get(r).unwrap().value;
+                print!("{}", value);
             }
             println!("");
         }
     }
+}
+
+// recursively traverse references and return a path
+fn traverse(references: &Vec<u8>, constant_pool: &HashMap<u8, Constant>) -> Vec<u8> {
+    // TODO ???
+    return references.clone();
 }
 
 fn read_constant_method_ref(data: &[u8], current: usize) -> Constant {
