@@ -323,20 +323,26 @@ fn read_constant_name_and_type(data: &[u8], current: usize) -> Constant {
     return result;
 }
 
-// TODO
-
 fn read_constant_unknown(data: &[u8], current: usize) -> Constant {
     panic!("Unknown CONSTANT tag type: {}!", &data[current]);
 }
 
 fn read_constant_long(data: &[u8], current: usize) -> Constant {
+
+    let slice = &data[(current + 1)..(current + 9)];
+    let low:  i64 = ((slice[4] as i64) << 24) + ((slice[5] as i64) << 16) + ((slice[6] as i64) << 8) + (slice[7] as i64);
+    let high: i64 = ((slice[0] as i64) << 24) + ((slice[1] as i64) << 16) + ((slice[2] as i64) << 8) + (slice[3] as i64);
+    let long = (high << 32) + low;
+    
     let result = Constant {constant_type: CONSTANT_LONG,
                            type_name: "Long".to_string(),
                            references: Vec::new(),
-                           value: format!("{}", "NOT IMPLEMENTED"),
+                           value: format!("{}", long),
                            size: 9};
     return result;
 }
+
+// TODO
 
 fn read_constant_float(data: &[u8], current: usize) -> Constant {
     let result = Constant {constant_type: CONSTANT_FLOAT,
