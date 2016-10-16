@@ -364,13 +364,13 @@ fn read_constant_float(data: &[u8], current: usize) -> Constant {
                     (bytes & 0x7fffff) | 0x800000 
                 };
                 
-        // FIXME loss of precision
+        // FIXME loss of precision (Float.MIN_VALUE: 1.4E-45f)
         let float = (s as f32) * (m as f32) * 2.0_f32.powi((e as i32) - 150);
         // TODO format float
         return Constant {constant_type: CONSTANT_FLOAT,
                         type_name: "Float".to_string(),
                         references: Vec::new(),
-                        value: float.to_string(),
+                        value: format!("{}f", float.to_string()),
                         size: 5};
     }
     return Constant {constant_type: CONSTANT_FLOAT,
