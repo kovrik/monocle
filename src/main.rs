@@ -42,15 +42,15 @@ const CONSTANT_METHODHANDLE       : u8 = 15;
 const CONSTANT_METHODTYPE         : u8 = 16;
 const CONSTANT_INVOKEDYNAMIC      : u8 = 18;
 
-// access flags
-const ACC_PUBLIC     : u16 = 0x0001;
-const ACC_FINAL      : u16 = 0x0010;
-const ACC_SUPER      : u16 = 0x0020;
-const ACC_INTERFACE  : u16 = 0x0200;
-const ACC_ABSTRACT   : u16 = 0x0400;
-const ACC_SYNTHETIC  : u16 = 0x1000;
-const ACC_ANNOTATION : u16 = 0x2000;
-const ACC_ENUM       : u16 = 0x4000;
+// class access flags
+const CLASS_ACC_FLAGS : [(u16, &'static str); 8] = [(0x0001,     "ACC_PUBLIC"),
+                                                    (0x0010,      "ACC_FINAL"),
+                                                    (0x0020,      "ACC_SUPER"),
+                                                    (0x0200,  "ACC_INTERFACE"),
+                                                    (0x0400,   "ACC_ABSTRACT"),
+                                                    (0x1000,  "ACC_SYNTHETIC"),
+                                                    (0x2000, "ACC_ANNOTATION"),
+                                                    (0x4000,       "ACC_ENUM")];
 
 // All 8-byte constants take up two entries in the constant_pool table of the class file. 
 static EIGHT_BYTE_CONSTANTS: &'static [u8] = &[CONSTANT_LONG, CONSTANT_DOUBLE];
@@ -122,12 +122,24 @@ fn main() {
  
     // read constant pool
     // TODO return struct instead
-    let current = read_constant_pool(&data, constant_pool_count);
-    println!("Current byte index: {}", current);
+    let (current, constant_pool) = read_constant_pool(&data, constant_pool_count);
+    // println!("Current byte index: {}", current);
  
-    // FIXME read access flags
-    let access_flags = data[current] << 2 | data[current + 1];
-    println!("Access flags: {}", access_flags);
+    let access_flags_mask = (data[current] << 2 | data[current + 1]) as u16;
+    let access_flags = read_access_flags(access_flags_mask);
+    println!("\n\tflags: {}\n", access_flags.join(", "));
+
+    let this_class_ref = data[current + 2] << 2 | data[current + 3];
+    let this_class_ref = constant_pool.get(&this_class_ref).unwrap().references[0];
+    let ref this_class = constant_pool.get(&this_class_ref).unwrap().value;
+    println!("This class: {}", this_class);
+    
+    let super_class_ref = data[current + 4] << 2 | data[current + 5];
+    let super_class_ref = constant_pool.get(&super_class_ref).unwrap().references[0];
+    let ref super_class = constant_pool.get(&super_class_ref).unwrap().value;
+    println!("Super class: {}", super_class);
+
+    // TODO interfaces count
 
     println!("");
     println!("Bytes:\n{:?}\n", data);
@@ -145,6 +157,16 @@ fn main() {
 //     }
 // }
 
+fn read_access_flags(mask: u16) -> Vec<&'static str> {
+    let mut flags = Vec::new();
+    for &(m, f) in &CLASS_ACC_FLAGS {
+        if (mask & m) == m {
+            flags.push(f);
+        }
+    }
+    return flags;
+}
+
 fn read_version(data: &[u8]) -> (u16, u16) {
     let minor = (data[4] << 2 | data[5]) as u16;
     let major = (data[6] << 2 | data[7]) as u16;
@@ -157,7 +179,7 @@ fn read_constant_pool_count(data: &[u8]) -> u8 {
     return (data[8] << 2 | data[9]) - 1;
 }
 
-fn read_constant_pool(data: &[u8], count: u8) -> usize {
+fn read_constant_pool(data: &[u8], count: u8) -> (usize, HashMap<u8, Constant>) {
     // constants read so far
     let mut read = 0;
     // current tag index
@@ -218,7 +240,7 @@ fn read_constant_pool(data: &[u8], count: u8) -> usize {
             println!("");
         }
     }
-    return current;
+    return (current, constant_pool);
 }
 
 // TODO ugly; reimplement and optimize
