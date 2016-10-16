@@ -19,6 +19,11 @@ use std::time;
  
 // CAFE BABE
 const MAGIC: [u8; 4]  = [202, 254, 186, 190];
+
+const POSITIVE_INFINITY_32: i32 = 0x7f800000;
+const NEGATIVE_INFINITY_32: i32 = 0xff800000;
+const POSITIVE_INFINITY_64: i64 = 0x7ff0000000000000;
+const NEGATIVE_INFINITY_64: i64 = 0xfff0000000000000;
  
 // Constant Pool Tags
 const CONSTANT_CLASS              : u8 = 7;
@@ -224,24 +229,22 @@ fn read_constant_method_ref(data: &[u8], current: usize) -> Constant {
     let name_and_type_index = &data[current + 3] << 2 | &data[current + 4];
 
     let refs = vec![class_index, name_and_type_index];
-    let result = Constant {constant_type: CONSTANT_METHODREF,
-                           type_name: "Methodref".to_string(),
-                           references: refs,
-                           value: format!("#{}.#{}", class_index, name_and_type_index),
-                           size: 5};
-    return result;
+    return Constant {constant_type: CONSTANT_METHODREF,
+                     type_name: "Methodref".to_string(),
+                     references: refs,
+                     value: format!("#{}.#{}", class_index, name_and_type_index),
+                     size: 5};
 }
 
 fn read_constant_string(data: &[u8], current: usize) -> Constant {
     let string_index = &data[current + 1] << 2 | &data[current + 2];
 
     let refs = vec![string_index];
-    let result = Constant {constant_type: CONSTANT_STRING,
-                           type_name: "String".to_string(),
-                           references: refs,
-                           value: format!("#{}", string_index),
-                           size: 3};
-    return result;
+    return Constant {constant_type: CONSTANT_STRING,
+                     type_name: "String".to_string(),
+                     references: refs,
+                     value: format!("#{}", string_index),
+                     size: 3};
 }
 
 fn read_constant_field_ref(data: &[u8], current: usize) -> Constant {
@@ -249,12 +252,11 @@ fn read_constant_field_ref(data: &[u8], current: usize) -> Constant {
     let name_and_type_index = &data[current + 3] << 2 | &data[current + 4];
 
     let refs = vec![class_index, name_and_type_index];
-    let result = Constant {constant_type: CONSTANT_FIELDREF,
-                           type_name: "Fieldref".to_string(),
-                           references: refs,
-                           value: format!("#{}.#{}", class_index, name_and_type_index),
-                           size: 5};
-    return result;
+    return Constant {constant_type: CONSTANT_FIELDREF,
+                     type_name: "Fieldref".to_string(),
+                     references: refs,
+                     value: format!("#{}.#{}", class_index, name_and_type_index),
+                     size: 5};
 }
 
 fn read_constant_interface_method_ref(data: &[u8], current: usize) -> Constant {
@@ -262,24 +264,22 @@ fn read_constant_interface_method_ref(data: &[u8], current: usize) -> Constant {
     let name_and_type_index = &data[current + 3] << 2 | &data[current + 4];
 
     let refs = vec![class_index, name_and_type_index];
-    let result = Constant {constant_type: CONSTANT_FIELDREF,
-                           type_name: "InterfaceMethodref".to_string(),
-                           references: refs,
-                           value: format!("#{}.#{}", class_index, name_and_type_index),
-                           size: 5};
-    return result;
+    return Constant {constant_type: CONSTANT_FIELDREF,
+                     type_name: "InterfaceMethodref".to_string(),
+                     references: refs,
+                     value: format!("#{}.#{}", class_index, name_and_type_index),
+                     size: 5};
 }
 
 fn read_constant_class(data: &[u8], current: usize) -> Constant {
     let name_index = &data[current + 1] << 2 | &data[current + 2];
 
     let refs = vec![name_index];
-    let result = Constant {constant_type: CONSTANT_CLASS,
-                           type_name: "Class".to_string(),
-                           references: refs,
-                           value: format!("#{}", name_index),
-                           size: 3};
-    return result;
+    return Constant {constant_type: CONSTANT_CLASS,
+                     type_name: "Class".to_string(),
+                     references: refs,
+                     value: format!("#{}", name_index),
+                     size: 3};
 }
 
 fn read_constant_utf8(data: &[u8], current: usize) -> Constant {
@@ -290,24 +290,24 @@ fn read_constant_utf8(data: &[u8], current: usize) -> Constant {
         Ok(v) => v,
         Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
     };
-    let result = Constant {constant_type: CONSTANT_UTF8,
-                           type_name: "Utf8".to_string(),
-                           references: Vec::new(),
-                           value: format!("{}", utf8_string),
-                           size: (3 as u8) + length};
-    return result;
+    return Constant {constant_type: CONSTANT_UTF8,
+                     type_name: "Utf8".to_string(),
+                     references: Vec::new(),
+                     value: format!("{}", utf8_string),
+                     size: (3 as u8) + length};
 }
 
 fn read_constant_integer(data: &[u8], current: usize) -> Constant {
-    let bytes = &data[current + 1] << 6 | &data[current + 2] << 4 |
-                &data[current + 3] << 2 | &data[current + 4] << 0;
 
-    let result = Constant {constant_type: CONSTANT_INTEGER,
-                           type_name: "Integer".to_string(),
-                           references: Vec::new(),
-                           value: format!("{}", bytes),
-                           size: 5};
-    return result;
+    let slice = &data[(current + 1)..(current + 5)];
+    let bytes = (slice[0] as i32) << 24 | (slice[1] as i32) << 16 |
+                (slice[2] as i32) << 8  | (slice[3] as i32) << 0;
+
+    return Constant {constant_type: CONSTANT_INTEGER,
+                     type_name: "Integer".to_string(),
+                     references: Vec::new(),
+                     value: format!("{}", bytes),
+                     size: 5};
 }
 
 fn read_constant_name_and_type(data: &[u8], current: usize) -> Constant {
@@ -315,12 +315,11 @@ fn read_constant_name_and_type(data: &[u8], current: usize) -> Constant {
     let descriptor_index = &data[current + 3] << 2 | &data[current + 4];
 
     let refs = vec![name_index, descriptor_index];
-    let result = Constant {constant_type: CONSTANT_NAMEANDTYPE,
-                           type_name: "NameAndType".to_string(),
-                           references: refs,
-                           value: format!("#{}.#{}", name_index, descriptor_index),
-                           size: 5};
-    return result;
+    return Constant {constant_type: CONSTANT_NAMEANDTYPE,
+                     type_name: "NameAndType".to_string(),
+                     references: refs,
+                     value: format!("#{}.#{}", name_index, descriptor_index),
+                     size: 5};
 }
 
 fn read_constant_unknown(data: &[u8], current: usize) -> Constant {
@@ -330,36 +329,47 @@ fn read_constant_unknown(data: &[u8], current: usize) -> Constant {
 fn read_constant_long(data: &[u8], current: usize) -> Constant {
 
     let slice = &data[(current + 1)..(current + 9)];
-    let low:  i64 = ((slice[4] as i64) << 24) + ((slice[5] as i64) << 16) + ((slice[6] as i64) << 8) + (slice[7] as i64);
-    let high: i64 = ((slice[0] as i64) << 24) + ((slice[1] as i64) << 16) + ((slice[2] as i64) << 8) + (slice[3] as i64);
+    let low:  i64 = ((slice[4] as i64) << 24) | ((slice[5] as i64) << 16) | ((slice[6] as i64) << 8) | (slice[7] as i64);
+    let high: i64 = ((slice[0] as i64) << 24) | ((slice[1] as i64) << 16) | ((slice[2] as i64) << 8) | (slice[3] as i64);
     let long = (high << 32) + low;
     
-    let result = Constant {constant_type: CONSTANT_LONG,
-                           type_name: "Long".to_string(),
-                           references: Vec::new(),
-                           value: format!("{}", long),
-                           size: 9};
-    return result;
+    return Constant {constant_type: CONSTANT_LONG,
+                     type_name: "Long".to_string(),
+                     references: Vec::new(),
+                     value: format!("{}", long),
+                     size: 9};
 }
 
 // TODO
 
 fn read_constant_float(data: &[u8], current: usize) -> Constant {
-    let result = Constant {constant_type: CONSTANT_FLOAT,
-                           type_name: "Float".to_string(),
-                           references: Vec::new(),
-                           value: format!("{}", "NOT IMPLEMENTED"),
-                           size: 9};
-    return result;
+
+    let slice = &data[(current + 1)..(current + 5)];
+    let bytes = (slice[0] as i32) << 24 | (slice[1] as i32) << 16 |
+                (slice[2] as i32) << 8  | (slice[3] as i32) << 0;
+    
+    let value = match bytes {
+        POSITIVE_INFINITY_32 => "Infinityf",
+        NEGATIVE_INFINITY_32 => "-Infinityf",
+        _ => "NOT IMPLEMENTED",
+    };
+    
+    // TODO
+
+    return Constant {constant_type: CONSTANT_FLOAT,
+                     type_name: "Float".to_string(),
+                     references: Vec::new(),
+                     value: value.to_string(),
+                     size: 5};
 }
 
 fn read_constant_double(data: &[u8], current: usize) -> Constant {
-    let result = Constant {constant_type: CONSTANT_DOUBLE,
-                           type_name: "Double".to_string(),
-                           references: Vec::new(),
-                           value: format!("{}", "NOT IMPLEMENTED"),
-                           size: 9};
-    return result;
+
+    return Constant {constant_type: CONSTANT_DOUBLE,
+                     type_name: "Double".to_string(),
+                     references: Vec::new(),
+                     value: format!("{}", "NOT IMPLEMENTED"),
+                     size: 9};
 }
 
 fn read_constant_invoke_dynamic(data: &[u8], current: usize) -> Constant {
