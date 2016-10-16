@@ -341,7 +341,6 @@ fn read_constant_long(data: &[u8], current: usize) -> Constant {
                      size: 9};
 }
 
-// TODO
 fn read_constant_float(data: &[u8], current: usize) -> Constant {
 
     let slice = &data[(current + 1)..(current + 5)];
@@ -382,13 +381,44 @@ fn read_constant_float(data: &[u8], current: usize) -> Constant {
 
 fn read_constant_double(data: &[u8], current: usize) -> Constant {
 
+    let slice = &data[(current + 1)..(current + 9)];
+    let low:  i64 = ((slice[4] as i64) << 24) | ((slice[5] as i64) << 16) | ((slice[6] as i64) << 8) | (slice[7] as i64);
+    let high: i64 = ((slice[0] as i64) << 24) | ((slice[1] as i64) << 16) | ((slice[2] as i64) << 8) | (slice[3] as i64);
+    let bytes = (high << 32) + low;
+
+    let mut value = match bytes as u64 {
+        POSITIVE_INFINITY_64 => "Infinityf",
+        NEGATIVE_INFINITY_64 => "-Infinityf",
+        0x7ff0000000000001...0x7fffffffffffffff => "NaNd",
+        0xfff0000000000001...0xffffffffffffffff => "NaNd",
+        _ =>  ""
+    };
+    if value.is_empty() {
+        let s = if (bytes >> 63) == 0 { 1 } else { -1 };
+        let e = (bytes >> 52) & 0x7ff;
+        let m = if e == 0 {
+                    (bytes & 0xfffffffffffff) << 1 
+                } else {
+                    (bytes & 0xfffffffffffff) | 0x10000000000000
+                };
+                
+        // FIXME loss of precision (Double.MIN_VALUE)
+        let double = (s as f64) * (m as f64) * 2.0_f64.powi((e as i32) - 1075);
+        // TODO format double 
+        return Constant {constant_type: CONSTANT_DOUBLE,
+                        type_name: "Double".to_string(),
+                        references: Vec::new(),
+                        value: format!("{}d", double.to_string()),
+                        size: 9};
+    }
     return Constant {constant_type: CONSTANT_DOUBLE,
                      type_name: "Double".to_string(),
                      references: Vec::new(),
-                     value: format!("{}", "NOT IMPLEMENTED"),
+                     value: value.to_string(),
                      size: 9};
 }
 
+// TODO
 fn read_constant_invoke_dynamic(data: &[u8], current: usize) -> Constant {
     panic!("NOT IMPLEMENTED");
 }
