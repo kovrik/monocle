@@ -8,6 +8,7 @@ use crypto::md5::Md5;
 
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::f32;
 use std::fmt;
 use std::fs;
 use std::fs::File;
@@ -20,10 +21,10 @@ use std::time;
 // CAFE BABE
 const MAGIC: [u8; 4]  = [202, 254, 186, 190];
 
-const POSITIVE_INFINITY_32: i32 = 0x7f800000;
-const NEGATIVE_INFINITY_32: i32 = 0xff800000;
-const POSITIVE_INFINITY_64: i64 = 0x7ff0000000000000;
-const NEGATIVE_INFINITY_64: i64 = 0xfff0000000000000;
+const POSITIVE_INFINITY_32: u32 = 0x7f800000;
+const NEGATIVE_INFINITY_32: u32 = 0xff800000;
+const POSITIVE_INFINITY_64: u64 = 0x7ff0000000000000;
+const NEGATIVE_INFINITY_64: u64 = 0xfff0000000000000;
  
 // Constant Pool Tags
 const CONSTANT_CLASS              : u8 = 7;
@@ -341,21 +342,37 @@ fn read_constant_long(data: &[u8], current: usize) -> Constant {
 }
 
 // TODO
-
 fn read_constant_float(data: &[u8], current: usize) -> Constant {
 
     let slice = &data[(current + 1)..(current + 5)];
-    let bytes = (slice[0] as i32) << 24 | (slice[1] as i32) << 16 |
-                (slice[2] as i32) << 8  | (slice[3] as i32) << 0;
+    let bytes = (slice[0] as u32) << 24 | (slice[1] as u32) << 16 |
+                (slice[2] as u32) << 8  | (slice[3] as u32) << 0;
     
-    let value = match bytes {
+    let mut value = match bytes as u32 {
         POSITIVE_INFINITY_32 => "Infinityf",
         NEGATIVE_INFINITY_32 => "-Infinityf",
-        _ => "NOT IMPLEMENTED",
+        0x7f800001...0x7fffffff => "NaNf",
+        0xff800001...0xffffffff => "NaNf",
+        _ =>  ""
     };
-    
-    // TODO
-
+    if value.is_empty() {
+        let s = if (bytes >> 31) == 0 { 1 } else { -1 };
+        let e = (bytes >> 23) & 0xff;
+        let m = if e == 0 {
+                    (bytes & 0x7fffff) << 1 
+                } else {
+                    (bytes & 0x7fffff) | 0x800000 
+                };
+                
+        // FIXME loss of precision
+        let float = (s as f32) * (m as f32) * 2.0_f32.powi((e as i32) - 150);
+        // TODO format float
+        return Constant {constant_type: CONSTANT_FLOAT,
+                        type_name: "Float".to_string(),
+                        references: Vec::new(),
+                        value: float.to_string(),
+                        size: 5};
+    }
     return Constant {constant_type: CONSTANT_FLOAT,
                      type_name: "Float".to_string(),
                      references: Vec::new(),

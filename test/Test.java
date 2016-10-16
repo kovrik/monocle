@@ -10,7 +10,7 @@ public class Test {
   private static final long max = Long.MIN_VALUE;
 
   private static final double d = 3452.776655d;
-  private static final double nan = Double.NaN;
+  private static final double nand = Double.NaN;
   private static final double dmax = Double.MAX_VALUE;
   private static final double dmin = Double.MIN_VALUE;
 
@@ -18,6 +18,7 @@ public class Test {
   private static final double dinfm = Double.NEGATIVE_INFINITY;
 
   private static final float f1 = -3345.345f;
+  private static final float nanf = Float.NaN;
   private static final float fmax = Float.MAX_VALUE;
   private static final float fmin = Float.MIN_VALUE;
 
