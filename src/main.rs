@@ -153,6 +153,11 @@ fn main() {
       current = current + 1;
     }
 
+    // read fields count
+    let mut current = current + 2;
+    let fields_count = data[current] << 2 | data[current + 1];
+    println!("Fields count: {}", fields_count);
+
     println!("Bytes:");
     print_hexdump(&data);
 }
