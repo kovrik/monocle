@@ -384,73 +384,58 @@ fn read_constant_float(data: &[u8], current: usize) -> Constant {
                 (slice[2] as u32) << 8  | (slice[3] as u32) << 0;
     
     let mut value = match bytes as u32 {
-        POSITIVE_INFINITY_32 => "Infinityf",
-        NEGATIVE_INFINITY_32 => "-Infinityf",
-        0x7f800001...0x7fffffff => "NaNf",
-        0xff800001...0xffffffff => "NaNf",
-        _ =>  ""
+        POSITIVE_INFINITY_32 => "Infinityf".to_string(),
+        NEGATIVE_INFINITY_32 => "-Infinityf".to_string(),
+        0x7f800001...0x7fffffff => "NaNf".to_string(),
+        0xff800001...0xffffffff => "NaNf".to_string(),
+        _ =>  {
+                let s = if (bytes >> 31) == 0 { 1 } else { -1 };
+                let e = (bytes >> 23) & 0xff;
+                let m = if e == 0 {
+                            (bytes & 0x7fffff) << 1 
+                        } else {
+                            (bytes & 0x7fffff) | 0x800000 
+                        };
+                // FIXME loss of precision (Float.MIN_VALUE: 1.4E-45f)
+                let float = (s as f32) * (m as f32) * 2.0_f32.powi((e as i32) - 150);
+                float.to_string()
+        }
     };
-    if value.is_empty() {
-        let s = if (bytes >> 31) == 0 { 1 } else { -1 };
-        let e = (bytes >> 23) & 0xff;
-        let m = if e == 0 {
-                    (bytes & 0x7fffff) << 1 
-                } else {
-                    (bytes & 0x7fffff) | 0x800000 
-                };
-                
-        // FIXME loss of precision (Float.MIN_VALUE: 1.4E-45f)
-        let float = (s as f32) * (m as f32) * 2.0_f32.powi((e as i32) - 150);
-        // TODO format float
-        return Constant {tag: CONSTANT_FLOAT,
-                        type_name: "Float".to_string(),
-                        references: Vec::new(),
-                        value: format!("{}f", float.to_string()),
-                        size: 5};
-    }
     return Constant {tag: CONSTANT_FLOAT,
                      type_name: "Float".to_string(),
                      references: Vec::new(),
-                     value: value.to_string(),
+                     value: value,
                      size: 5};
 }
 
 fn read_constant_double(data: &[u8], current: usize) -> Constant {
-
     let slice = &data[(current + 1)..(current + 9)];
     let low:  i64 = ((slice[4] as i64) << 24) | ((slice[5] as i64) << 16) | ((slice[6] as i64) << 8) | (slice[7] as i64);
     let high: i64 = ((slice[0] as i64) << 24) | ((slice[1] as i64) << 16) | ((slice[2] as i64) << 8) | (slice[3] as i64);
     let bytes = (high << 32) + low;
 
     let mut value = match bytes as u64 {
-        POSITIVE_INFINITY_64 => "Infinityf",
-        NEGATIVE_INFINITY_64 => "-Infinityf",
-        0x7ff0000000000001...0x7fffffffffffffff => "NaNd",
-        0xfff0000000000001...0xffffffffffffffff => "NaNd",
-        _ =>  ""
+        POSITIVE_INFINITY_64 => "Infinityf".to_string(),
+        NEGATIVE_INFINITY_64 => "-Infinityf".to_string(),
+        0x7ff0000000000001...0x7fffffffffffffff => "NaNd".to_string(),
+        0xfff0000000000001...0xffffffffffffffff => "NaNd".to_string(),
+        _ =>  {
+                let s = if (bytes >> 63) == 0 { 1 } else { -1 };
+                let e = (bytes >> 52) & 0x7ff;
+                let m = if e == 0 {
+                            (bytes & 0xfffffffffffff) << 1 
+                        } else {
+                            (bytes & 0xfffffffffffff) | 0x10000000000000
+                        };
+                // FIXME loss of precision (Double.MIN_VALUE)
+                let double = (s as f64) * (m as f64) * 2.0_f64.powi((e as i32) - 1075);
+                double.to_string()
+        }
     };
-    if value.is_empty() {
-        let s = if (bytes >> 63) == 0 { 1 } else { -1 };
-        let e = (bytes >> 52) & 0x7ff;
-        let m = if e == 0 {
-                    (bytes & 0xfffffffffffff) << 1 
-                } else {
-                    (bytes & 0xfffffffffffff) | 0x10000000000000
-                };
-                
-        // FIXME loss of precision (Double.MIN_VALUE)
-        let double = (s as f64) * (m as f64) * 2.0_f64.powi((e as i32) - 1075);
-        // TODO format double 
-        return Constant {tag: CONSTANT_DOUBLE,
-                        type_name: "Double".to_string(),
-                        references: Vec::new(),
-                        value: format!("{}d", double.to_string()),
-                        size: 9};
-    }
     return Constant {tag: CONSTANT_DOUBLE,
                      type_name: "Double".to_string(),
                      references: Vec::new(),
-                     value: value.to_string(),
+                     value: value,
                      size: 9};
 }
 
