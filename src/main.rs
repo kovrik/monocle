@@ -138,7 +138,20 @@ fn main() {
     println!("Super class: {}", super_class);
     println!("");
 
-    // TODO interfaces count
+    // read interfaces_count
+    let interfaces_count= data[current + 6] << 2 | data[current + 7];
+    println!("Interfaces count: {}", interfaces_count);
+
+    // read interfaces
+    // TODO cleanup and move into a separate method
+    let mut current = current + 8;
+    for i in 0..interfaces_count {
+      let interface_ref = data[current + (i as usize)] << 2 | data[current + 1 + (i as usize)];
+      let ref interface_ref = constant_pool.get(&interface_ref).unwrap().references[0];
+      let ref interface = constant_pool.get(interface_ref).unwrap().value;
+      println!("\tInterface: {}", interface);
+      current = current + 1;
+    }
 
     println!("Bytes:");
     print_hexdump(&data);
@@ -177,9 +190,9 @@ fn read_constant_pool(data: &[u8], count: u8) -> (usize, HashMap<u8, Constant>) 
         let tag = data[current];
         read = read + 1;
         let constant = match tag as u8 {
-            CONSTANT_CLASS         => read_constant_class(&data, current),
-            CONSTANT_FIELDREF      => read_constant_field_ref(&data, current),
-            CONSTANT_METHODREF      => read_constant_method_ref(&data, current),
+            CONSTANT_CLASS              => read_constant_class(&data, current),
+            CONSTANT_FIELDREF           => read_constant_field_ref(&data, current),
+            CONSTANT_METHODREF          => read_constant_method_ref(&data, current),
             CONSTANT_INTERFACEMETHODREF => read_constant_interface_method_ref(&data, current),
             CONSTANT_STRING        => read_constant_string(&data, current),
             CONSTANT_INTEGER       => read_constant_integer(&data, current),

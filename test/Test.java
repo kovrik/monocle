@@ -1,5 +1,8 @@
+import java.io.Serializable;
 
-public class Test {
+public class Test implements Serializable, Runnable {
+
+  private static final long serialVersionUID = 1L;
 
   private static final int intv = 38944985;
   private static final int int_max = Integer.MAX_VALUE;
@@ -29,4 +32,8 @@ public class Test {
     String s = "Hello";
     System.out.println(s);
   }
+
+  public void run() {
+  }
+
 }
