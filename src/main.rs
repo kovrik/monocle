@@ -16,10 +16,8 @@ use std::io::prelude::*;
 use std::str;
 use std::time;
 // use std::env;
-
  
-// CAFE BABE
-const MAGIC: [u8; 4]  = [202, 254, 186, 190];
+const MAGIC: [u8; 4] = [0xCA, 0xFE, 0xBA, 0xBE];
 
 const POSITIVE_INFINITY_32: u32 = 0x7f800000;
 const NEGATIVE_INFINITY_32: u32 = 0xff800000;
@@ -99,7 +97,8 @@ fn main() {
     print!("  Last modified {}; ", modified_timestamp);
  
     // Size in bytes
-    println!("size: {} bytes", data.len());
+    let size = data.len();
+    println!("size: {} bytes", size);
  
     // calculate md5 checksum
     let mut md5 = Md5::new();
@@ -138,14 +137,12 @@ fn main() {
     let super_class_ref = constant_pool.get(&super_class_ref).unwrap().references[0];
     let ref super_class = constant_pool.get(&super_class_ref).unwrap().value;
     println!("Super class: {}", super_class);
+    println!("");
 
     // TODO interfaces count
 
-    println!("");
-    println!("Bytes:\n{:?}\n", data);
- 
-    // let hex = data.iter().map(|&x| format!("{:X}", x)).collect::<Vec<_>>();
-    // println!("Hex:\n{:?}\n", hex);
+    println!("Bytes:");
+    print_hexdump(&data);
 }
 
 // fn get_filename() -> &'static String {
@@ -470,8 +467,29 @@ fn read_constant_method_handle(data: &[u8], current: usize) -> Constant {
 fn read_last_modified(filename: &str) -> String {
     let metadata = fs::metadata(filename);
     let modified_timestamp = match metadata {
-        Ok(time) => time.modified().unwrap().duration_since(time::UNIX_EPOCH).unwrap().as_secs(),
+        Ok(meta) => meta.modified().unwrap().duration_since(time::UNIX_EPOCH).unwrap().as_secs(),
         Err(e)   => panic!("Unable to get last_modified for {}", filename),
     };
     return UTC.timestamp((modified_timestamp as i64), 0).format("%d/%m/%Y").to_string();
+}
+
+// FIXME byte order
+fn print_hexdump(data: &[u8]) {
+    let mut c = 0;
+    let mut word: u16 = 0;
+    for b in data {
+        if (c % 16) == 0 {
+            println!("");
+            print!("{:08x}: ", c);
+        }
+        c = c + 1;
+        if (c % 2) == 0 {
+            print!("{:04x} ", word+(*b as u16));
+        } else {
+            word = (*b as u16) << 8;
+        }
+    }
+    if (&data.len() % 2) != 0 {
+        print!("{:04x} ", word);
+    }
 }
