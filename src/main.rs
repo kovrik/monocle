@@ -50,6 +50,17 @@ const CLASS_ACC_FLAGS : [(u16, &'static str); 8] = [(0x0001,     "ACC_PUBLIC"),
                                                     (0x2000, "ACC_ANNOTATION"),
                                                     (0x4000,       "ACC_ENUM")];
 
+// fields access flags
+const FIELD_ACC_FLAGS : [(u16, &'static str); 9] = [(0x0001,     "ACC_PUBLIC"),
+                                                    (0x0002,    "ACC_PRIVATE"),
+                                                    (0x0004,  "ACC_PROTECTED"),
+                                                    (0x0008,     "ACC_STATIC"),
+                                                    (0x0010,      "ACC_FINAL"),
+                                                    (0x0040,   "ACC_VOLATILE"),
+                                                    (0x0080,  "ACC_TRANSIENT"),
+                                                    (0x1000,  "ACC_SYNTHETIC"),
+                                                    (0x4000,       "ACC_ENUM")];
+
 // All 8-byte constants take up two entries in the constant_pool table of the class file. 
 static EIGHT_BYTE_CONSTANTS: &'static [u8] = &[CONSTANT_LONG, CONSTANT_DOUBLE];
  
@@ -62,9 +73,26 @@ static EIGHT_BYTE_CONSTANTS: &'static [u8] = &[CONSTANT_LONG, CONSTANT_DOUBLE];
 struct Constant {
     tag: u8,
     type_name: String,
-    references:  Vec<u8>,
+    references: Vec<u8>,
     value: String,
     size: u8,
+}
+
+struct FieldInfo {
+    access_flags_mask: u16,
+    name_index: u16,
+    descriptor_index: u16,
+    attributes_count: u16,
+    // TODO
+    // attribute_info attributes[attributes_count];
+    size: u8,
+}
+
+impl fmt::Display for FieldInfo {
+    fn fmt(&self, c: &mut fmt::Formatter) -> fmt::Result {
+        write!(c, "access_flags_mask: {}, name_index: {}, descriptor_index: {}, attributes_count: {}, attributes: ..., size: {}",
+               self.access_flags_mask, self.name_index, self.descriptor_index, self.attributes_count, self.size )
+    }
 }
 
 impl fmt::Display for Constant {
@@ -124,7 +152,7 @@ fn main() {
     // println!("Current byte index: {}", current);
  
     let access_flags_mask = (data[current] << 2 | data[current + 1]) as u16;
-    let access_flags = read_access_flags(access_flags_mask);
+    let access_flags = read_access_flags(access_flags_mask, &CLASS_ACC_FLAGS);
     println!("\n\tflags: {}\n", access_flags.join(", "));
 
     let this_class_ref = data[current + 2] << 2 | data[current + 3];
@@ -158,13 +186,38 @@ fn main() {
     let fields_count = data[current] << 2 | data[current + 1];
     println!("Fields count: {}", fields_count);
 
+    // read fields
+    let mut current = current + 1;
+    for n in 1..fields_count {
+        println!("\tField {}:", n);
+        let field = read_field(&data, current);
+        println!("\t\t{}:", field);
+    }
     println!("Bytes:");
     print_hexdump(&data);
 }
 
-fn read_access_flags(mask: u16) -> Vec<&'static str> {
+fn read_field(data: &[u8], current: usize) -> FieldInfo {
+
+    let access_flags_mask = (&data[current + 1] << 2 | &data[current + 2]) as u16;
+    // TODO
+    let access_flags = read_access_flags(access_flags_mask, &FIELD_ACC_FLAGS);
+    let name_index = (&data[current + 3] << 2 | &data[current + 4]) as u16;
+    let descriptor_index = (&data[current + 5] << 2 | &data[current + 6]) as u16;
+    let attributes_count = (&data[current + 7] << 2 | &data[current + 8]) as u16;
+    // let attributes = ...;
+    return FieldInfo { access_flags_mask: access_flags_mask, name_index: name_index,
+                       descriptor_index: descriptor_index, attributes_count: attributes_count,
+                       size: 0, };
+}
+
+// TODO
+fn read_attributes() {
+}
+
+fn read_access_flags(mask: u16, flags_list: &[(u16, &'static str)]) -> Vec<&'static str> {
     let mut flags = Vec::new();
-    for &(m, f) in &CLASS_ACC_FLAGS {
+    for &(m, f) in flags_list {
         if (mask & m) == m {
             flags.push(f);
         }
