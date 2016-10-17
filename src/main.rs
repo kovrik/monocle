@@ -15,7 +15,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::str;
 use std::time;
-// use std::env;
+use std::env;
  
 const MAGIC: [u8; 4] = [0xCA, 0xFE, 0xBA, 0xBE];
 
@@ -80,11 +80,10 @@ impl fmt::Display for Constant {
 fn main() {
  
     println!("___________________________________________");
-    // let filename = get_filename();
-    let filename = "test/Test.class";
+    let filename = env::args().nth(1).unwrap_or("test/Test.class".to_string());
     println!("{}", filename);
 
-    let mut f = File::open(filename).expect("Unable to open file");
+    let mut f = File::open(&filename).expect("Unable to open file");
     let mut data = Vec::new();
     f.read_to_end(&mut data).expect("Unable to read data");
    
@@ -93,7 +92,7 @@ fn main() {
     // seems to be a valid .class file
     println!("Classfile {}", filename);
  
-    let modified_timestamp = read_last_modified(filename);
+    let modified_timestamp = read_last_modified(&filename);
     print!("  Last modified {}; ", modified_timestamp);
  
     // Size in bytes
@@ -144,15 +143,6 @@ fn main() {
     println!("Bytes:");
     print_hexdump(&data);
 }
-
-// fn get_filename() -> &'static String {
-//     let args: Vec<String> = env::args().collect();
-//     if args.len() < 2 {
-//         panic!("Please specify a .class file!");
-//     } else {
-//         return &args[1];
-//     }
-// }
 
 fn read_access_flags(mask: u16) -> Vec<&'static str> {
     let mut flags = Vec::new();
