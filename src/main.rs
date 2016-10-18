@@ -30,6 +30,9 @@ use field_info::*;
 mod attribute_info;
 use attribute_info::*;
 
+mod constant_value;
+use constant_value::*;
+
 mod writer;
 use writer::*;
  
@@ -122,7 +125,7 @@ fn main() {
     let mut current = current + 1;
     for n in 1..fields_count {
         print!("\tField {}: ", n);
-        let field = read_field(&data, current);
+        let field = read_field(&data, current, &constant_pool);
         println!("{}: ", writer::write_field(field, &constant_pool));
     }
     println!("Bytes:");
