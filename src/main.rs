@@ -29,6 +29,9 @@ use field_info::*;
 
 mod attribute_info;
 use attribute_info::*;
+
+mod writer;
+use writer::*;
  
 const MAGIC: [u8; 4] = [0xCA, 0xFE, 0xBA, 0xBE];
  
@@ -120,7 +123,7 @@ fn main() {
     for n in 1..fields_count {
         print!("\tField {}: ", n);
         let field = read_field(&data, current);
-        println!("{}: ", field);
+        println!("{}: ", writer::write_field(field, &constant_pool));
     }
     println!("Bytes:");
     print_hexdump(&data);

@@ -14,5 +14,6 @@ impl fmt::Display for AttributeInfo {
 
 
 // TODO
-fn read_attributes() {
+pub fn read_attributes(data: &[u8], current: usize) -> Vec<AttributeInfo> {
+    return Vec::new();
 }
