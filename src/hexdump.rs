@@ -1,4 +1,7 @@
+use std::char::REPLACEMENT_CHARACTER;
 use std::str;
+use std::borrow::Cow;
+
 
 // FIXME byte order
 pub fn print_hexdump(data: &[u8]) {
@@ -19,11 +22,8 @@ pub fn print_hexdump(data: &[u8]) {
                 let w = ((line[2*b] as u16) << 8) + (line[2*b + 1] as u16);
                 print!(" {:04x}", w);
             }
-            // TODO
-            // let utf8_replacement_bytes: [u8; 3] = [0xEF, 0xBF, 0xBD];
-            // let utf8_replacement = String::from_utf8_lossy(&utf8_replacement_bytes);
-            // let s = String::from_utf8_lossy(&line);
-            // let s = s.replace(utf8_replacement, ".");
+            // TODO Replace ALL non-printable chars with ..
+            // let s = String::from_utf8_lossy(&line).replace(REPLACEMENT_CHARACTER, "..");
             // print!("  {}", s);
         }
     }
